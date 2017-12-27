@@ -246,7 +246,7 @@ func PerformJoin(p *JoinParams, inner,leftOuter,rightOuter bool) []JoinedPair {
 	leftKeyed := Filter(p.LeftKey.Exists, p.Left)
 	rightKeyed := Filter(p.RightKey.Exists, p.Right)
 	leftByKey := PartitionByKey(p.LeftKey.Value, leftKeyed)
-	rightByKey := PartitionByKey(p.LeftKey.Value, rightKeyed)
+	rightByKey := PartitionByKey(p.RightKey.Value, rightKeyed)
 	keys := UnionKeys(leftByKey, rightByKey)
 	j := []JoinedPair{}
 	for k := range(keys) {
