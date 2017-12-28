@@ -181,9 +181,9 @@ The `outer` join returns:
 }
 ```
 
-The `outer-left` join returns:
+The `left-outer` join returns:
 ```
-> jjoin outer --left file1 --right file2 --using f1
+> jjoin left-outer --left file1 --right file2 --using f1
 {
   "left": {
     "f1": "v1",
@@ -203,9 +203,9 @@ The `outer-left` join returns:
 }
 ```
 
-The `outer-right` join returns:
+The `right-outer` join returns:
 ```
-> jjoin outer-right --left file1 --right file2 --using f1
+> jjoin right-outer --left file1 --right file2 --using f1
 {
   "left": {
     "f1": "v1",
@@ -225,9 +225,9 @@ The `outer-right` join returns:
 }
 ```
 
-The `symmetric-diff` join returns:
+The `symm-diff` join returns:
 ```
-> jjoin symmetric-diff --left file1 --right file2 --using f1
+> jjoin symm-diff --left file1 --right file2 --using f1
 {
   "left": {
     "f1": "v2",
