@@ -1,8 +1,12 @@
 all: clean update build test
 
 PKG_VERS := github.com/jmyounker/vers
+
 CMD := jjoin
 PKG_NAME := jjoin
+
+GOFMT=gofmt -s 
+GOFILES=$(wildcard *.go)
 
 clean:
 	rm -rf $(CMD) target
@@ -38,6 +42,9 @@ endif
 
 install: set-prefix build
 	install -m 755 -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(CMD) $(PREFIX)/bin/$(CMD)
+
+format:
+	$(GOFMT) -w $(GOFILES)
 
 package-base: test
 	mkdir target

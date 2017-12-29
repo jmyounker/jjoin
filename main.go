@@ -11,7 +11,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-var version string;
+var version string
 
 func main() {
 	app := cli.NewApp()
@@ -39,87 +39,86 @@ func main() {
 			Name:  "using, u",
 			Usage: "Join both streams using this key.",
 		},
-
 	}
 
 	app.Commands = []cli.Command{
 		{
 			Name:   "inner",
-			Usage: "Inner join",
+			Usage:  "Inner join",
 			Action: actionInnerJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "full",
-			Usage: "Full outer join",
+			Usage:  "Full outer join",
 			Action: actionFullOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "outer",
-			Usage: "Full outer join",
+			Usage:  "Full outer join",
 			Action: actionFullOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "outer-full",
-			Usage: "Full outer join",
+			Usage:  "Full outer join",
 			Action: actionFullOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "full-outer",
-			Usage: "Full outer join",
+			Usage:  "Full outer join",
 			Action: actionFullOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "left",
-			Usage: "Left outer join",
+			Usage:  "Left outer join",
 			Action: actionLeftOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "left-outer",
-			Usage: "Left outer join",
+			Usage:  "Left outer join",
 			Action: actionLeftOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "outer-left",
-			Usage: "Left outer join",
+			Usage:  "Left outer join",
 			Action: actionLeftOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "right",
-			Usage: "Right outer join",
+			Usage:  "Right outer join",
 			Action: actionRightOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "right-outer",
-			Usage: "Right outer join",
+			Usage:  "Right outer join",
 			Action: actionRightOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "outer-right",
-			Usage: "Right outer join",
+			Usage:  "Right outer join",
 			Action: actionRightOuterJoin,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "symm-diff",
-			Usage: "Symmetric difference",
+			Usage:  "Symmetric difference",
 			Action: actionSymmetricDiff,
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 		{
 			Name:   "subtract",
 			Action: actionSubtract,
 			Usage:  "Subtract right stream from left stream.",
-			Flags: stdFlags,
+			Flags:  stdFlags,
 		},
 	}
 
@@ -186,7 +185,7 @@ func actionSubtract(c *cli.Context) error {
 		return err
 	}
 	joined := PerformJoin(params, false, true, false)
-	for _, x := range(joined) {
+	for _, x := range joined {
 		b, err := json.MarshalIndent(x.Left, "", "  ")
 		if err != nil {
 			panic("error rendering JSON")
@@ -197,9 +196,9 @@ func actionSubtract(c *cli.Context) error {
 }
 
 type JoinParams struct {
-	Left []interface{}
-	Right []interface{}
-	LeftKey *Key
+	Left     []interface{}
+	Right    []interface{}
+	LeftKey  *Key
 	RightKey *Key
 }
 
@@ -217,9 +216,9 @@ func PopulateJoin(c *cli.Context) (*JoinParams, error) {
 		return nil, err
 	}
 	return &JoinParams{
-		Left: ls,
-		Right: rs,
-		LeftKey: lk,
+		Left:     ls,
+		Right:    rs,
+		LeftKey:  lk,
 		RightKey: rk,
 	}, nil
 }
@@ -233,7 +232,7 @@ func getDataStream(streamOpt string, c *cli.Context) ([]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot read %s", fn)
 	}
-	return  decodeJsonStream(f)
+	return decodeJsonStream(f)
 }
 
 func getKeyOpts(c *cli.Context) (*Key, *Key, error) {
@@ -242,7 +241,7 @@ func getKeyOpts(c *cli.Context) (*Key, *Key, error) {
 	bothKeyExpr := c.String("using")
 
 	if bothKeyExpr == "" && leftKeyExpr == "" && rightKeyExpr == "" {
-		return nil, nil, errors.New("keys required");
+		return nil, nil, errors.New("keys required")
 	}
 	if bothKeyExpr != "" {
 		if leftKeyExpr != "" || rightKeyExpr != "" {
@@ -284,14 +283,14 @@ func decodeJsonStream(in *os.File) ([]interface{}, error) {
 	return r, nil
 }
 
-func PerformJoin(p *JoinParams, inner,leftOuter,rightOuter bool) []JoinedPair {
+func PerformJoin(p *JoinParams, inner, leftOuter, rightOuter bool) []JoinedPair {
 	leftKeyed := Filter(p.LeftKey.Exists, p.Left)
 	rightKeyed := Filter(p.RightKey.Exists, p.Right)
 	leftByKey := PartitionByKey(p.LeftKey.Value, leftKeyed)
 	rightByKey := PartitionByKey(p.RightKey.Value, rightKeyed)
 	keys := UnionKeys(leftByKey, rightByKey)
 	j := []JoinedPair{}
-	for k := range(keys) {
+	for k := range keys {
 		left, ok := leftByKey[k]
 		if !ok {
 			left = []interface{}{}
@@ -301,20 +300,20 @@ func PerformJoin(p *JoinParams, inner,leftOuter,rightOuter bool) []JoinedPair {
 			right = []interface{}{}
 		}
 		if inner && len(left) > 0 && len(right) > 0 {
-			for _, xl := range (left) {
-				for _, xr := range (right) {
+			for _, xl := range left {
+				for _, xr := range right {
 					j = append(j, JoinedPair{xl, xr})
 				}
 			}
 		}
 		if leftOuter && len(left) > 0 && len(right) == 0 {
-			for _, x := range(left) {
+			for _, x := range left {
 				j = append(j, JoinedPair{x, nil})
 			}
 
 		}
 		if rightOuter && len(left) == 0 && len(right) > 0 {
-			for _, x := range(right) {
+			for _, x := range right {
 				j = append(j, JoinedPair{nil, x})
 			}
 		}
@@ -323,17 +322,17 @@ func PerformJoin(p *JoinParams, inner,leftOuter,rightOuter bool) []JoinedPair {
 }
 
 type JoinedPair struct {
-	Left interface{}
+	Left  interface{}
 	Right interface{}
 }
 
-func DisplayJoinedPairs(p []JoinedPair)  {
-	for _, x := range(p) {
+func DisplayJoinedPairs(p []JoinedPair) {
+	for _, x := range p {
 		b, err := json.MarshalIndent(
 			map[string]interface{}{
-			"left": x.Left,
-			"right": x.Right,
-		}, "", "  ")
+				"left":  x.Left,
+				"right": x.Right,
+			}, "", "  ")
 		if err != nil {
 			panic("error rendering JSON")
 		}
@@ -341,9 +340,9 @@ func DisplayJoinedPairs(p []JoinedPair)  {
 	}
 }
 
-func Filter(key func(interface{})bool, seq []interface{}) []interface{} {
+func Filter(key func(interface{}) bool, seq []interface{}) []interface{} {
 	r := []interface{}{}
-	for _, x := range(seq) {
+	for _, x := range seq {
 		if key(x) {
 			r = append(r, x)
 		}
@@ -353,7 +352,7 @@ func Filter(key func(interface{})bool, seq []interface{}) []interface{} {
 
 func PartitionByKey(key func(interface{}) interface{}, seq []interface{}) map[interface{}][]interface{} {
 	part := map[interface{}][]interface{}{}
-	for _, x := range(seq) {
+	for _, x := range seq {
 		ks := key(x)
 		pk, ok := part[ks]
 		if !ok {
@@ -366,23 +365,22 @@ func PartitionByKey(key func(interface{}) interface{}, seq []interface{}) map[in
 
 func UnionKeys(left map[interface{}][]interface{}, right map[interface{}][]interface{}) map[interface{}]struct{} {
 	k := map[interface{}]struct{}{}
-	for kl := range(left) {
+	for kl := range left {
 		k[kl] = struct{}{}
 	}
-	for kr := range(right) {
+	for kr := range right {
 		k[kr] = struct{}{}
 	}
 	return k
 }
 
-
 type Key struct {
-	Path []string;
+	Path []string
 }
 
 func (k Key) Get(d interface{}) (bool, interface{}) {
 	c := d
-	for _, p := range(k.Path) {
+	for _, p := range k.Path {
 		ok, n := nextDict(p, c)
 		if !ok {
 			return false, nil
@@ -432,11 +430,10 @@ func (k Key) Value(d interface{}) interface{} {
 
 func KeyFromString(kp string) (*Key, error) {
 	if kp == "." {
-		return &Key{ Path: []string{} }, nil
+		return &Key{Path: []string{}}, nil
 	}
 	if strings.HasPrefix(kp, ".") {
 		kp = string([]rune(kp)[1:])
 	}
-	return &Key{ Path: strings.Split(kp, ".") }, nil
+	return &Key{Path: strings.Split(kp, ".")}, nil
 }
-
