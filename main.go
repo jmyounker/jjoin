@@ -50,9 +50,33 @@ func main() {
 			Flags: stdFlags,
 		},
 		{
+			Name:   "full",
+			Usage: "Full outer join",
+			Action: actionFullOuterJoin,
+			Flags: stdFlags,
+		},
+		{
 			Name:   "outer",
 			Usage: "Full outer join",
 			Action: actionFullOuterJoin,
+			Flags: stdFlags,
+		},
+		{
+			Name:   "outer-full",
+			Usage: "Full outer join",
+			Action: actionFullOuterJoin,
+			Flags: stdFlags,
+		},
+		{
+			Name:   "full-outer",
+			Usage: "Full outer join",
+			Action: actionFullOuterJoin,
+			Flags: stdFlags,
+		},
+		{
+			Name:   "left",
+			Usage: "Left outer join",
+			Action: actionLeftOuterJoin,
 			Flags: stdFlags,
 		},
 		{
@@ -62,7 +86,25 @@ func main() {
 			Flags: stdFlags,
 		},
 		{
+			Name:   "outer-left",
+			Usage: "Left outer join",
+			Action: actionLeftOuterJoin,
+			Flags: stdFlags,
+		},
+		{
+			Name:   "right",
+			Usage: "Right outer join",
+			Action: actionRightOuterJoin,
+			Flags: stdFlags,
+		},
+		{
 			Name:   "right-outer",
+			Usage: "Right outer join",
+			Action: actionRightOuterJoin,
+			Flags: stdFlags,
+		},
+		{
+			Name:   "outer-right",
 			Usage: "Right outer join",
 			Action: actionRightOuterJoin,
 			Flags: stdFlags,
