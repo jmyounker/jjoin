@@ -1,6 +1,7 @@
 all: clean update build test
 
 PKG_VERS := github.com/jmyounker/vers
+CMD := jjoin
 
 clean:
 	rm -rf jjoin target
@@ -20,6 +21,22 @@ build: set-version
 
 test: build
 	go test
+
+set-prefix:
+ifndef PREFIX
+ifeq ($(shell uname),Darwin)
+	$(eval PREFIX := /usr/local)
+	$(eval INSTALL_USER := $(shell id -u)) 
+	$(eval INSTALL_GROUP := $(shell id -g)) 
+else
+	$(eval PREFIX := /usr)
+	$(eval INSTALL_USER := root)
+	$(eval INTALL_GROUP := root)
+endif
+endif
+
+install: set-prefix build
+	install -m 755 -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(CMD) $(PREFIX)/bin/$(CMD)
 
 package-base: test
 	mkdir target
