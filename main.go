@@ -6,14 +6,23 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli"
+	"github.com/jmyounker/mustache"
 )
 
 var version string
 
 func main() {
+
+	err := buildApp().Run(os.Args)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func buildApp() *cli.App {
 	app := cli.NewApp()
 	app.Usage = "Join dictionaries from JSON streams."
 	app.Version = version
@@ -38,6 +47,10 @@ func main() {
 		cli.StringFlag{
 			Name:  "using, u",
 			Usage: "Join both streams using this key.",
+		},
+		cli.StringFlag{
+			Name:  "output, o",
+			Usage: "Send output to file instead of stdout.",
 		},
 	}
 
@@ -121,61 +134,41 @@ func main() {
 			Flags:  stdFlags,
 		},
 	}
-
-	err := app.Run(os.Args)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	return app
 }
 
 func actionInnerJoin(c *cli.Context) error {
-	params, err := PopulateJoin(c)
-	if err != nil {
-		return err
-	}
-	joined := PerformJoin(params, true, false, false)
-	DisplayJoinedPairs(joined)
-	return nil
+	return genericJoinAction(c, true, false, false)
 }
 
 func actionFullOuterJoin(c *cli.Context) error {
-	params, err := PopulateJoin(c)
-	if err != nil {
-		return err
-	}
-	joined := PerformJoin(params, true, true, true)
-	DisplayJoinedPairs(joined)
-	return nil
+	return genericJoinAction(c, true, true, true)
 }
 
 func actionLeftOuterJoin(c *cli.Context) error {
-	params, err := PopulateJoin(c)
-	if err != nil {
-		return err
-	}
-	joined := PerformJoin(params, true, true, false)
-	DisplayJoinedPairs(joined)
-	return nil
+	return genericJoinAction(c, true, true, false)
 }
 
 func actionRightOuterJoin(c *cli.Context) error {
-	params, err := PopulateJoin(c)
-	if err != nil {
-		return err
-	}
-	joined := PerformJoin(params, true, false, true)
-	DisplayJoinedPairs(joined)
-	return nil
+	return genericJoinAction(c, true, false, true)
 }
 
 func actionSymmetricDiff(c *cli.Context) error {
+	return genericJoinAction(c, false, true, true)
+}
+
+func genericJoinAction(c *cli.Context, inner, left, right bool) error {
 	params, err := PopulateJoin(c)
 	if err != nil {
 		return err
 	}
-	joined := PerformJoin(params, false, true, true)
-	DisplayJoinedPairs(joined)
+	joined := PerformJoin(params, inner, left, right)
+	out, err := GetOutputFile(c)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	DisplayJoinedPairs(joined, out)
 	return nil
 }
 
@@ -185,12 +178,17 @@ func actionSubtract(c *cli.Context) error {
 		return err
 	}
 	joined := PerformJoin(params, false, true, false)
+	out, err := GetOutputFile(c)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
 	for _, x := range joined {
 		b, err := json.MarshalIndent(x.Left, "", "  ")
 		if err != nil {
 			panic("error rendering JSON")
 		}
-		fmt.Println(string(b))
+		fmt.Fprint(out, string(b))
 	}
 	return nil
 }
@@ -247,7 +245,7 @@ func getKeyOpts(c *cli.Context) (*Key, *Key, error) {
 		if leftKeyExpr != "" || rightKeyExpr != "" {
 			return nil, nil, errors.New("using is mutually exclusive with left and right key")
 		}
-		k, err := KeyFromString(bothKeyExpr)
+		k, err := MustacheKeyFromString(bothKeyExpr)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -256,13 +254,13 @@ func getKeyOpts(c *cli.Context) (*Key, *Key, error) {
 	if leftKeyExpr == "" || rightKeyExpr == "" {
 		return nil, nil, errors.New("both left key and right key are required")
 	}
-	kl, err := KeyFromString(leftKeyExpr)
+	kl, err := MustacheKeyFromString(leftKeyExpr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("left key error: %s", err)
 	}
-	kr, err := KeyFromString(rightKeyExpr)
+	kr, err := MustacheKeyFromString(rightKeyExpr)
 	if err != nil {
-		return nil, nil, fmt.Errorf("left key error: %s", err)
+		return nil, nil, fmt.Errorf("right key error: %s", err)
 	}
 	return kl, kr, nil
 }
@@ -284,10 +282,8 @@ func decodeJsonStream(in *os.File) ([]interface{}, error) {
 }
 
 func PerformJoin(p *JoinParams, inner, leftOuter, rightOuter bool) []JoinedPair {
-	leftKeyed := Filter(p.LeftKey.Exists, p.Left)
-	rightKeyed := Filter(p.RightKey.Exists, p.Right)
-	leftByKey := PartitionByKey(p.LeftKey.Value, leftKeyed)
-	rightByKey := PartitionByKey(p.RightKey.Value, rightKeyed)
+	leftByKey := PartitionByKey(p.LeftKey.Get, p.Left)
+	rightByKey := PartitionByKey(p.RightKey.Get, p.Right)
 	keys := UnionKeys(leftByKey, rightByKey)
 	j := []JoinedPair{}
 	for k := range keys {
@@ -326,31 +322,33 @@ type JoinedPair struct {
 	Right interface{}
 }
 
-func DisplayJoinedPairs(p []JoinedPair) {
+func DisplayJoinedPairs(p []JoinedPair, f *os.File) {
 	for _, x := range p {
-		b, err := json.MarshalIndent(
+		b, err := json.Marshal(
 			map[string]interface{}{
 				"left":  x.Left,
 				"right": x.Right,
-			}, "", "  ")
+			})
 		if err != nil {
 			panic("error rendering JSON")
 		}
-		fmt.Println(string(b))
+		fmt.Fprintf(f, string(b))
 	}
 }
 
-func Filter(key func(interface{}) bool, seq []interface{}) []interface{} {
-	r := []interface{}{}
-	for _, x := range seq {
-		if key(x) {
-			r = append(r, x)
-		}
+func GetOutputFile(c *cli.Context) (*os.File, error) {
+	fn := c.String("output")
+	if fn == "" {
+		return os.Stdout, nil
 	}
-	return r
+	f, err := os.Create(fn)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
 }
 
-func PartitionByKey(key func(interface{}) interface{}, seq []interface{}) map[interface{}][]interface{} {
+func PartitionByKey(key func(interface{}) string, seq []interface{}) map[interface{}][]interface{} {
 	part := map[interface{}][]interface{}{}
 	for _, x := range seq {
 		ks := key(x)
@@ -375,65 +373,18 @@ func UnionKeys(left map[interface{}][]interface{}, right map[interface{}][]inter
 }
 
 type Key struct {
-	Path []string
+	tmpl *mustache.Template
 }
 
-func (k Key) Get(d interface{}) (bool, interface{}) {
-	c := d
-	for _, p := range k.Path {
-		ok, n := nextDict(p, c)
-		if !ok {
-			return false, nil
-		}
-		c = n
+func MustacheKeyFromString(s string) (*Key, error) {
+	tmpl, err := mustache.ParseString(s)
+	if err != nil {
+		return nil, err
 	}
-	return terminalComponent(c)
+	return &Key{tmpl}, nil
 }
 
-func nextDict(p string, d interface{}) (bool, interface{}) {
-	if d == nil {
-		return false, nil
-	}
-	switch v := d.(type) {
-	case map[string]interface{}:
-		c, ok := v[p]
-		if !ok {
-			return false, nil
-		}
-		return true, c
-	default:
-		return false, nil
-	}
-}
+func (k Key) Get(ctx interface{}) string {
+	return k.tmpl.Render(false, ctx)
 
-func terminalComponent(x interface{}) (bool, interface{}) {
-	if x == nil {
-		return true, nil
-	}
-	switch x.(type) {
-	case bool, int, float64, string:
-		return true, x
-	default:
-		return false, nil
-	}
-}
-
-func (k Key) Exists(d interface{}) bool {
-	x, _ := k.Get(d)
-	return x
-}
-
-func (k Key) Value(d interface{}) interface{} {
-	_, x := k.Get(d)
-	return x
-}
-
-func KeyFromString(kp string) (*Key, error) {
-	if kp == "." {
-		return &Key{Path: []string{}}, nil
-	}
-	if strings.HasPrefix(kp, ".") {
-		kp = string([]rune(kp)[1:])
-	}
-	return &Key{Path: strings.Split(kp, ".")}, nil
 }

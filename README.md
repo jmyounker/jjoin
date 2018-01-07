@@ -31,7 +31,7 @@ Let's assume you have to files containing the following JSON:
 
 The `inner` join returns:
 ```
-> jjoin inner --left file1 --right file2 --using f1
+> jjoin inner --left file1 --right file2 --using {{f1}}
 {
   "left": {
     "f1": "v1",
@@ -65,7 +65,7 @@ You can choose separate keys for the left and the right.
 ```
 
 ```
-> jjoin inner --left file1 --right file2 --left-key ip --right-key private-ip
+> jjoin inner --left file1 --right file2 --left-key {{ip}} --right-key {{private-ip}}
 {
   "left": {
     "hostname": "foo.example.com",
@@ -114,7 +114,7 @@ The key `.` allows you to join with a string stream:
 ```
 
 ```
-> jjoin inner --left file1 --right file2 --left-key hostname --right-key .
+> jjoin inner --left file1 --right file2 --left-key {{hostname}} --right-key {{.}}
 {
   "left": {
     "hostname": "baz.example.com"
@@ -205,7 +205,7 @@ The `left-outer` join returns:
 
 The `right-outer` join returns:
 ```
-> jjoin right-outer --left file1 --right file2 --using f1
+> jjoin right-outer --left file1 --right file2 --using {{f1}}
 {
   "left": {
     "f1": "v1",
@@ -227,7 +227,7 @@ The `right-outer` join returns:
 
 The `symm-diff` join returns:
 ```
-> jjoin symm-diff --left file1 --right file2 --using f1
+> jjoin symm-diff --left file1 --right file2 --using {{f1}}
 {
   "left": {
     "f1": "v2",
@@ -246,7 +246,7 @@ The `symm-diff` join returns:
 
 The `subtract` join returns:
 ```
-> jjoin subtract --left file1 --right file2 --using f1
+> jjoin subtract --left file1 --right file2 --using {{f1}}
 {
     "f1": "v2",
     "id": "L2"
