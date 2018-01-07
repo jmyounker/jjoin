@@ -35,17 +35,17 @@ type TestCase struct {
 }
 
 var joinTests = []TestCase{
-	//{
-	//	"{\"a\": \"b\"}",
-	//	"\"b\"",
-	//	"inner",
-	//	"{{a}}",
-	//	"{{.}}",
-	//	[]JoinedPair{
-	//		{Left: map[string]string{"a": "b"},
-	//		Right:"b"},
-	//	},
-	//},
+	{
+		"{\"a\": \"b\"}",
+		"\"b\"",
+		"inner",
+		"{{a}}",
+		"{{.}}",
+		[]JoinedPair{
+			{Left: map[string]string{"a": "b"},
+			Right:"b"},
+		},
+	},
 	{
 		"{\"a\": \"b\"}",
 		"{\"a\": \"b\"}",
@@ -70,13 +70,13 @@ func TestJoin(t *testing.T) {
 		right, err := ioutil.TempFile("", "right.json")
 		failWhenErr(t, err)
 		defer os.Remove(right.Name())
-		right.WriteString(tc.Left)
+		right.WriteString(tc.Right)
 		right.Close()
 
 		out, err := ioutil.TempFile("", "output")
 		failWhenErr(t, err)
 		defer os.Remove(out.Name())
-		right.Close()
+		out.Close()
 
 		cmd := []string{
 			"jjoin",
